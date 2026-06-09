@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  HOMEOWNER
+  FRANCHISEE
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum LeadStatus {
+  NEW
+  FEASIBILITY_BOOKED
+  REPORT_READY
+  PROPOSAL_SENT
+  RTS_INSTALLED
+  LOST
+}
+
+enum HouseType {
+  INDEPENDENT
+  APARTMENT
+  VILLA
+  FACTORY
+  OTHER
+}
+
+enum SimulationStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+model User {
+  id             String   @id @default(uuid())
+  name           String
+  email          String   @unique
+  phone          String?
+  role           Role     @default(HOMEOWNER)
+  passwordHash   String
+  whatsappNumber String?
+  pincode        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  franchiseeProfile FranchiseeProfile?
+  leads             Lead[]
+}
+
+model FranchiseeProfile {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id])
+  territoryPincodes     String[] // Array of pincodes
+  companyName           String?
+  gstNumber             String?
+  bankAccountDetails    String? // Masked or encrypted
+  isActive              Boolean  @default(true)
+  monthlyTargetTests    Int      @default(0)
+  monthlyTargetInstalls Int      @default(0)
+  
+  leads                 Lead[]
+  colonies              Colony[]
+}
+
+model Colony {
+  id                   String            @id @default(uuid())
+  name                 String
+  pincode              String
+  approxHouseCount     Int?
+  assignedFranchiseeId String?
+  assignedFranchisee   FranchiseeProfile? @relation(fields: [assignedFranchiseeId], references: [id])
+  notes                String?
+}
+
+model Lead {
+  id                          String     @id @default(uuid())
+  homeownerId                 String
+  homeowner                   User       @relation(fields: [homeownerId], references: [id])
+  franchiseeId                String?
+  franchisee                  FranchiseeProfile? @relation(fields: [franchiseeId], references: [id])
+  source                      String?    // WEB, WHATSAPP, OFFLINE_QR, OTHER
+  status                      LeadStatus @default(NEW)
+  avgMonthlyBillINR           Float?
+  electricityTariffINRPerUnit Float?
+  houseType                   HouseType?
+  roofAreaSqftEstimate        Float?
+  latitude                    Float?
+  longitude                   Float?
+  pincode                     String?
+  createdAt                   DateTime   @default(now())
+  updatedAt                   DateTime   @updatedAt
+
+  roofPhotos                  RoofPhoto[]
+  simulations                 Simulation[]
+}
+
+model RoofPhoto {
+  id            String   @id @default(uuid())
+  leadId        String
+  lead          Lead     @relation(fields: [leadId], references: [id])
+  url           String
+  exifLatitude  Float?
+  exifLongitude Float?
+  capturedAt    DateTime?
+  uploadedAt    DateTime @default(now())
+}
+
+model Simulation {
+  id                        String           @id @default(uuid())
+  leadId                    String
+  lead                      Lead             @relation(fields: [leadId], references: [id])
+  status                    SimulationStatus @default(PENDING)
+  panelCapacityKWp          Float?
+  panelCount                Int?
+  tiltDegrees               Float?
+  azimuthDegrees            Float?
+  systemLossPercent         Float?
+  openMeteoRequestPayload   Json?
+  openMeteoResponseSummary  Json?
+  annualGenerationKWh       Float?
+  monthlyGenerationKWhArray Json?
+  annualBillBeforeINR       Float?
+  annualBillAfterINR        Float?
+  annualSavingsINR          Float?
+  paybackPeriodYears        Float?
+  createdAt                 DateTime         @default(now())
+  updatedAt                 DateTime         @updatedAt
+}

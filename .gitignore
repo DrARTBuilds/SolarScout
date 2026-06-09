@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Production Builds
+client/dist/
+server/dist/
+
+# Configuration and Keys
+.env
+server/.env
+.firebase/
+client/.firebase/
+
+# Python Virtual Environments & Cache
+__pycache__/
+*/__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# OS/IDE metadata
+.DS_Store
+.vscode/
+.idea/
+*.suo
+*.sln
